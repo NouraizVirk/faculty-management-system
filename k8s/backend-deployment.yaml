@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: faculty-backend
-        image: nouraizvirk/faculty-backend:latest
+        image: virk121/faculty-backend:latest
         ports:
         - containerPort: 5000
           name: http

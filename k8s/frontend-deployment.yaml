@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: faculty-frontend
-        image: nouraizvirk/faculty-frontend:latest
+        image: virk121/faculty-frontend:latest
         ports:
         - containerPort: 3000
           name: http
