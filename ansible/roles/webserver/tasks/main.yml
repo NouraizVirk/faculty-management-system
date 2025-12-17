@@ -1,0 +1,51 @@
+---
+# Web Server Role Tasks
+# Installs and configures software for web servers
+
+- name: Install web server prerequisites
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Start Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Install Node.js and npm
+  apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Configure Nginx
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/faculty-management
+  notify: restart nginx
+
+- name: Create application directory
+  file:
+    path: /opt/faculty-management
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: '0755'

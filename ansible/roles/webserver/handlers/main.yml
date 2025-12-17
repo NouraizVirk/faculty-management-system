@@ -1,0 +1,12 @@
+---
+# Web Server Role Handlers
+
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+
+- name: restart docker
+  systemd:
+    name: docker
+    state: restarted

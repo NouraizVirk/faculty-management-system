@@ -1,0 +1,47 @@
+---
+# Database Server Role Tasks
+# Installs and configures database software
+
+- name: Install database prerequisites
+  apt:
+    name:
+      - curl
+      - wget
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Docker for database containers
+  apt:
+    name: docker.io
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Start Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Install PostgreSQL client
+  apt:
+    name: postgresql-client
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Create database directory
+  file:
+    path: /var/lib/faculty-db
+    state: directory
+    mode: '0755'
+
+- name: Install Python PostgreSQL library
+  apt:
+    name: python3-psycopg2
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Create database backup directory
+  file:
+    path: /backup/faculty-db
+    state: directory
+    mode: '0755'

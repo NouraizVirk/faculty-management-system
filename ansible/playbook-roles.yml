@@ -1,0 +1,54 @@
+---
+# Role-based Playbook for Faculty Management System
+# Uses Ansible roles for better organization
+
+- name: Configure Web Servers using Roles
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+  
+  roles:
+    - webserver
+  
+  post_tasks:
+    - name: Display web server configuration complete
+      debug:
+        msg: "Web server {{ inventory_hostname }} configured successfully"
+
+- name: Configure Database Servers using Roles
+  hosts: database
+  become: yes
+  gather_facts: yes
+  
+  roles:
+    - database
+  
+  post_tasks:
+    - name: Display database server configuration complete
+      debug:
+        msg: "Database server {{ inventory_hostname }} configured successfully"
+
+- name: Verify All Servers
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Check Docker status
+      systemd:
+        name: docker
+      register: docker_status
+      ignore_errors: yes
+    
+    - name: Display Docker status
+      debug:
+        msg: "Docker is {{ docker_status.status.ActiveState | default('not installed') }}"
+    
+    - name: Gather installed packages
+      package_facts:
+        manager: auto
+      ignore_errors: yes
+    
+    - name: Display summary
+      debug:
+        msg: "Server {{ inventory_hostname }} configuration completed"

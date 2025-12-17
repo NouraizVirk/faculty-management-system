@@ -1,0 +1,183 @@
+---
+# Main Playbook for Faculty Management System Infrastructure Setup
+# This playbook configures web servers and database servers
+
+- name: Configure Web Servers
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Display server information
+      debug:
+        msg: "Configuring {{ inventory_hostname }} as {{ server_role }} server"
+    
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      ignore_errors: yes
+    
+    - name: Install Docker prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+      when: ansible_os_family == "Debian" and install_docker
+      ignore_errors: yes
+    
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian" and install_docker
+      ignore_errors: yes
+    
+    - name: Install Docker
+      apt:
+        name:
+          - docker.io
+        state: present
+      when: install_docker
+      ignore_errors: yes
+    
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: install_docker
+      ignore_errors: yes
+    
+    - name: Install Node.js and npm
+      apt:
+        name:
+          - nodejs
+          - npm
+        state: present
+      when: ansible_os_family == "Debian" and install_nodejs
+      ignore_errors: yes
+    
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_os_family == "Debian" and install_nginx
+      ignore_errors: yes
+    
+    - name: Start and enable Nginx service
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+      when: install_nginx
+      ignore_errors: yes
+    
+    - name: Create application directory
+      file:
+        path: /opt/faculty-management
+        state: directory
+        mode: '0755'
+    
+    - name: Install Python packages for Docker management
+      apt:
+        name:
+          - python3-pip
+          - python3-docker
+        state: present
+      when: ansible_os_family == "Debian"
+      ignore_errors: yes
+    
+    - name: Display installed software versions
+      shell: |
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "Node.js: $(node --version 2>/dev/null || echo 'Not installed')"
+        echo "npm: $(npm --version 2>/dev/null || echo 'Not installed')"
+        echo "Nginx: $(nginx -v 2>&1 || echo 'Not installed')"
+      register: software_versions
+      changed_when: false
+    
+    - name: Show software versions
+      debug:
+        var: software_versions.stdout_lines
+
+- name: Configure Database Servers
+  hosts: database
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Display server information
+      debug:
+        msg: "Configuring {{ inventory_hostname }} as {{ server_role }} server"
+    
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      ignore_errors: yes
+    
+    - name: Install Docker for database containers
+      apt:
+        name:
+          - docker.io
+        state: present
+      when: ansible_os_family == "Debian" and install_docker
+      ignore_errors: yes
+    
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: install_docker
+      ignore_errors: yes
+    
+    - name: Install PostgreSQL client tools
+      apt:
+        name:
+          - postgresql-client
+        state: present
+      when: ansible_os_family == "Debian" and install_postgresql
+      ignore_errors: yes
+    
+    - name: Create database data directory
+      file:
+        path: /var/lib/faculty-db
+        state: directory
+        mode: '0755'
+    
+    - name: Install Python packages for database management
+      apt:
+        name:
+          - python3-pip
+          - python3-psycopg2
+        state: present
+      when: ansible_os_family == "Debian"
+      ignore_errors: yes
+    
+    - name: Display installed software versions
+      shell: |
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "PostgreSQL Client: $(psql --version 2>/dev/null || echo 'Not installed')"
+      register: db_software_versions
+      changed_when: false
+    
+    - name: Show database software versions
+      debug:
+        var: db_software_versions.stdout_lines
+
+- name: Post-Configuration Summary
+  hosts: all
+  gather_facts: no
+  
+  tasks:
+    - name: Display completion message
+      debug:
+        msg: "Configuration completed for {{ inventory_hostname }}"
