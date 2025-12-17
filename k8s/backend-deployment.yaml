@@ -7,7 +7,7 @@ metadata:
     app: faculty-backend
     tier: backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: faculty-backend
@@ -61,21 +61,8 @@ spec:
               key: JWT_SECRET
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "128Mi"
+            cpu: "100m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /api/stats
-            port: 5000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /api/stats
-            port: 5000
-          initialDelaySeconds: 10
-          periodSeconds: 5
+            memory: "256Mi"
+            cpu: "200m"
