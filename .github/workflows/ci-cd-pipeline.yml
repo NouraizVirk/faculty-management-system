@@ -1,0 +1,300 @@
+name: Faculty Management System CI/CD Pipeline
+
+# Trigger Configuration - Runs on push and pull requests
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+jobs:
+  # ============================================
+  # BUILD STAGE - Frontend
+  # ============================================
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+      
+      - name: Upload frontend build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: frontend/build
+          retention-days: 1
+
+  # ============================================
+  # BUILD STAGE - Backend
+  # ============================================
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      - name: Upload backend artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-build
+          path: backend
+          retention-days: 1
+
+  # ============================================
+  # AUTOMATED TESTS - Frontend
+  # ============================================
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test -- --watchAll=false --passWithNoTests
+      
+      - name: Test report
+        if: always()
+        run: echo "Frontend tests completed"
+
+  # ============================================
+  # AUTOMATED TESTS - Backend
+  # ============================================
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    needs: build-backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test
+      
+      - name: Test report
+        if: always()
+        run: echo "Backend tests completed"
+
+  # ============================================
+  # DOCKER BUILD AND PUSH - Frontend
+  # ============================================
+  docker-frontend:
+    name: Build and Push Frontend Docker Image
+    runs-on: ubuntu-latest
+    needs: [test-frontend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/faculty-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/faculty-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/faculty-frontend:latest
+          cache-to: type=inline
+
+  # ============================================
+  # DOCKER BUILD AND PUSH - Backend
+  # ============================================
+  docker-backend:
+    name: Build and Push Backend Docker Image
+    runs-on: ubuntu-latest
+    needs: [test-backend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/faculty-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/faculty-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/faculty-backend:latest
+          cache-to: type=inline
+
+  # ============================================
+  # DEPLOY TO KUBERNETES (AKS)
+  # ============================================
+  deploy-to-aks:
+    name: Deploy to Azure Kubernetes Service
+    runs-on: ubuntu-latest
+    needs: [docker-frontend, docker-backend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AZURE_CLUSTER_NAME }}
+      
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace faculty-management --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Create Docker registry secret
+        run: |
+          kubectl create secret docker-registry dockerhub-secret \
+            --docker-server=https://index.docker.io/v1/ \
+            --docker-username=${{ secrets.DOCKER_USERNAME }} \
+            --docker-password=${{ secrets.DOCKER_PASSWORD }} \
+            --namespace=faculty-management \
+            --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/ -n faculty-management
+      
+      - name: Update deployment images
+        run: |
+          kubectl set image deployment/faculty-backend \
+            faculty-backend=${{ secrets.DOCKER_USERNAME }}/faculty-backend:${{ github.sha }} \
+            -n faculty-management
+          kubectl set image deployment/faculty-frontend \
+            faculty-frontend=${{ secrets.DOCKER_USERNAME }}/faculty-frontend:${{ github.sha }} \
+            -n faculty-management
+      
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/faculty-backend -n faculty-management --timeout=5m
+          kubectl rollout status deployment/faculty-frontend -n faculty-management --timeout=5m
+      
+      - name: Get service endpoints
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n faculty-management
+          echo "=== Services ==="
+          kubectl get services -n faculty-management
+          echo "=== Ingress ==="
+          kubectl get ingress -n faculty-management
+
+  # ============================================
+  # DEPLOYMENT VERIFICATION
+  # ============================================
+  verify-deployment:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-to-aks]
+    
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Set AKS context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AZURE_CLUSTER_NAME }}
+      
+      - name: Check pod status
+        run: |
+          kubectl get pods -n faculty-management
+          kubectl get services -n faculty-management
+      
+      - name: Deployment summary
+        run: |
+          echo "✅ CI/CD Pipeline completed successfully!"
+          echo "📦 Docker images pushed to Docker Hub"
+          echo "🚀 Application deployed to AKS"
+          echo "🔍 Verify at: kubectl get all -n faculty-management"
