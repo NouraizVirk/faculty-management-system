@@ -1,16 +1,17 @@
-name: Simple CI/CD Pipeline (Docker Hub Only)
+name: Simple CI/CD Pipeline (Docker Hub Only) - DISABLED
 
 # Trigger Configuration - Runs on push and pull requests
 on:
-  push:
-    branches:
-      - main
-      - master
-      - develop
-  pull_request:
-    branches:
-      - main
-      - master
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #     - master
+  #     - develop
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - master
 
 jobs:
   # ============================================

@@ -1,16 +1,17 @@
-name: Faculty Management System CI/CD Pipeline
+name: Faculty Management System CI/CD Pipeline - DISABLED
 
 # Trigger Configuration - Runs on push and pull requests
 on:
-  push:
-    branches:
-      - main
-      - master
-      - develop
-  pull_request:
-    branches:
-      - main
-      - master
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+  #     - master
+  #     - develop
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - master
 
 env:
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
