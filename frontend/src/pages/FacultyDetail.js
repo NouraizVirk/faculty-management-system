@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import './FacultyDetail.css';
@@ -15,11 +15,7 @@ const FacultyDetail = () => {
   const [formData, setFormData] = useState({});
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    fetchFaculty();
-  }, [id]);
-
-  const fetchFaculty = async () => {
+  const fetchFaculty = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/faculty/${id}`, {
         headers: {
@@ -39,7 +35,11 @@ const FacultyDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, token, navigate]);
+
+  useEffect(() => {
+    fetchFaculty();
+  }, [fetchFaculty]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();

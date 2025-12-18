@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
@@ -15,11 +15,7 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/stats`, {
         headers: {
@@ -36,7 +32,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (loading) {
     return <div className="loading">Loading dashboard...</div>;

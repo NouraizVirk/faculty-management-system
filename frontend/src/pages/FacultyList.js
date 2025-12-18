@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './FacultyList.css';
@@ -12,11 +12,7 @@ const FacultyList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchFaculty();
-  }, []);
-
-  const fetchFaculty = async () => {
+  const fetchFaculty = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/faculty`, {
         headers: {
@@ -33,7 +29,11 @@ const FacultyList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchFaculty();
+  }, [fetchFaculty]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this faculty member?')) {
