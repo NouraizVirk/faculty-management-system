@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: faculty_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-faculty_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - faculty_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: faculty_backend
+    environment:
+      PORT: 5000
+      DB_HOST: postgres
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-faculty_db}
+      DB_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET:-supersecretkey123}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    networks:
+      - faculty_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: faculty_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - faculty_network
+
+volumes:
+  postgres_data:
+
+networks:
+  faculty_network:
+    driver: bridge
