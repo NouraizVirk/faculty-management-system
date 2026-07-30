@@ -90,7 +90,7 @@ jobs:
         run: |
           echo "All DevOps IaC configurations and container definitions passed validation."
 
-      - name: Cloud Deployment (Optional / Guarded)
-        if: ${{ secrets.AZURE_CREDENTIALS != '' }}
+      - name: Cloud Deployment Status
         run: |
-          echo "Azure credentials present. Deploying to Cloud cluster..."
+          echo "CI/CD pipeline complete. All container builds and orchestration checks passed."
+          echo "For cloud deployment, configure AZURE_CREDENTIALS in repository secrets."
