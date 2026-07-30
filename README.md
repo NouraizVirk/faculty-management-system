@@ -1,12 +1,14 @@
-# 🎓 Faculty Management System — DevOps Architecture & CI/CD Pipeline
+# 🎓 Faculty Management System
 
-![CI/CD Pipeline](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=githubactions)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker)
-![NodeJS](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![CI/CD Pipeline](https://github.com/NouraizVirk/faculty-management-system/actions/workflows/ci-cd.yml/badge.svg)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=flat-square&logo=docker)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-326CE5?style=flat-square&logo=kubernetes)
+![Ansible](https://img.shields.io/badge/Ansible-Automated-EE0000?style=flat-square&logo=ansible)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat-square&logo=postgresql)
+![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=flat-square&logo=node.js)
+![React](https://img.shields.io/badge/React-18.x-61DAFB?style=flat-square&logo=react)
 
-A full-stack, containerized **Faculty Management System** built with **Express.js**, **React**, and **PostgreSQL**, engineered with modern DevOps principles including **Automated CI/CD Pipelines**, **Multi-stage Docker Containers**, and **Infrastructure-as-Code Orchestration**.
+A full-stack, containerized **Faculty Management System** built with modern DevOps practices — featuring automated CI/CD pipelines, multi-stage Docker containers, Kubernetes orchestration, and Ansible-based server provisioning.
 
 ---
 
@@ -14,103 +16,170 @@ A full-stack, containerized **Faculty Management System** built with **Express.j
 
 ```mermaid
 graph TD
-    User([🌐 End User]) -->|HTTP / Port 80| Nginx[Nginx Web Server / React Frontend]
-    Nginx -->|API Calls / Port 5000| Express[Express.js REST API Backend]
-    Express -->|SQL Queries / Port 5432| Postgres[(PostgreSQL Database)]
+    Dev([👨‍💻 Developer]) -->|git push| GitHub[GitHub Repository]
+    GitHub --> Actions[GitHub Actions CI/CD]
 
-    subgraph CI/CD Automation Flow
-        Git[Push to Main] --> Actions[GitHub Actions Runner]
-        Actions --> Quality[🧪 Code Quality & Build Check]
-        Quality --> DockerBuild[🐳 Multi-stage Docker Build]
-        DockerBuild --> ConfigCheck[⚙️ Orchestration & IaC Validation]
+    subgraph CI/CD Pipeline
+        Actions --> Build[🧪 Code Quality & Build]
+        Build --> Docker[🐳 Docker Image Build]
+        Docker --> Infra[⚙️ Orchestration Validation]
     end
+
+    Infra -->|Deploy| K8s[☸️ Kubernetes Cluster]
+    K8s --> Frontend[Nginx / React Frontend]
+    K8s --> Backend[Express.js REST API]
+    Backend --> DB[(PostgreSQL 15)]
 ```
 
 ---
 
-## ✨ Key DevOps & Technical Highlights
+## ✨ DevOps Highlights
 
-- 🔄 **Automated CI/CD Pipeline**: Continuous Integration using GitHub Actions featuring automated dependency checks, frontend static production builds, multi-stage Docker image verification, and orchestration config parsing.
-- 🐳 **Containerization Best Practices**: Optimized multi-stage Dockerfiles utilizing Alpine base images to minimize image footprint and improve security.
-- ⚙️ **Production Container Orchestration**: Complete `docker-compose.yml` environment linking database, backend API, and static frontend proxy.
-- 🔐 **Secure Authentication**: Express backend featuring JWT authentication and bcrypt password hashing.
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-| :--- | :--- |
-| **Frontend** | React, React Router, Nginx (Production Proxy) |
-| **Backend** | Node.js, Express.js, JWT, bcryptjs |
-| **Database** | PostgreSQL 15 |
-| **Containerization** | Docker, Docker Compose |
-| **CI/CD** | GitHub Actions |
+| Feature | Technology | Detail |
+|---|---|---|
+| **CI/CD** | GitHub Actions | 3-stage automated pipeline on every push |
+| **Containerization** | Docker | Multi-stage Alpine builds for minimal image size |
+| **Orchestration** | Kubernetes | Deployments with resource limits & readiness probes |
+| **Config Management** | Ansible | Automated server provisioning & Docker deployment |
+| **Reverse Proxy** | Nginx | API proxying, gzip compression, static asset caching |
+| **Database** | PostgreSQL 15 | Connection pooling, init scripts, persistent volumes |
+| **Secret Management** | K8s Secrets | Credentials injected via `secretKeyRef` — never hardcoded |
 
 ---
 
-## 🚀 Quickstart (Local Deployment)
-
-### Prerequisites
-- [Docker & Docker Desktop](https://www.docker.com/) installed
-- [Git](https://git-scm.com/)
-
-### Running with Docker Compose
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/NouraizVirk/Faculty-Management-System.git
-   cd Faculty-Management-System
-   ```
-
-2. **Start the application stack:**
-   ```bash
-   docker compose up -d --build
-   ```
-
-3. **Access the application:**
-   - 🌐 **Frontend App:** [http://localhost](http://localhost)
-   - 🔌 **Backend API:** [http://localhost:5000](http://localhost:5000)
-   - 🗄️ **PostgreSQL DB:** `localhost:5432`
-
-4. **Stop the stack:**
-   ```bash
-   docker compose down -v
-   ```
-
----
-
-## ⚙️ CI/CD Pipeline Architecture
-
-The automated pipeline defined in `.github/workflows/ci-cd.yml` executes three stages on every commit:
-
-1. **Build & Test Stage**: Sets up Node.js 18, installs dependencies, and verifies React static compilation.
-2. **Container Build Stage**: Verifies Dockerfile execution for both backend and frontend environments using Docker Buildx.
-3. **Orchestration Verification**: Validates Docker Compose files (`docker-compose.yml`, `docker-compose.dev.yml`) to ensure configuration integrity before deployment.
-
----
-
-## 📁 Repository Structure
+## 🗂️ Project Structure
 
 ```
-.
+faculty-management-system/
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml             # Primary GitHub Actions CI/CD Pipeline
+│       └── ci-cd.yml           # 3-stage GitHub Actions CI/CD pipeline
+│
 ├── backend/
-│   ├── Dockerfile                # Production Node.js Alpine Container Definition
-│   ├── server.js                 # Express REST API
-│   ├── db.js                     # PostgreSQL Connection Pool & Initialization
+│   ├── Dockerfile              # Production Node.js Alpine container
+│   ├── server.js               # Express.js REST API (Auth + Faculty CRUD)
+│   ├── db.js                   # PostgreSQL connection pool with limits
+│   ├── middleware/auth.js       # JWT authentication middleware
+│   ├── init.sql                # Database initialization & seed script
+│   ├── .env.example            # Documented environment variable template
 │   └── package.json
+│
 ├── frontend/
-│   ├── Dockerfile                # Multi-stage Nginx Container Definition
+│   ├── Dockerfile              # Multi-stage build → Nginx Alpine container
+│   ├── nginx.conf              # Production proxy with caching & API routing
+│   ├── src/
+│   │   ├── App.js              # React dashboard UI
+│   │   └── App.css             # Dark-mode styling
 │   └── package.json
-├── docker-compose.yml            # Production Multi-container Stack Definition
-├── docker-compose.dev.yml        # Development PostgreSQL Service Setup
+│
+├── k8s/
+│   └── deployment.yml          # K8s Deployments, Services, resource limits
+│
+├── ansible/
+│   └── deploy.yml              # Server provisioning & Docker deployment playbook
+│
+├── docker-compose.yml          # Full production stack (backend + frontend + db)
+├── docker-compose.dev.yml      # Dev environment (PostgreSQL only)
 └── README.md
 ```
 
 ---
 
+## 🔄 CI/CD Pipeline
+
+Three automated stages run on every push to `main`:
+
+```
+Push to main
+    │
+    ▼
+┌─────────────────────────┐
+│  🧪 Code Quality & Build │  → npm ci (backend + frontend)
+│                         │  → React production build (CI=false)
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│  🐳 Docker Container     │  → Build backend image (Node 18 Alpine)
+│     Build               │  → Build frontend image (multi-stage Nginx)
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│  ⚙️ Orchestration        │  → Validate docker-compose configs
+│     Validation          │  → Verify deployment manifests
+└─────────────────────────┘
+```
+
+---
+
+## 🚀 Quickstart
+
+### Local Development with Docker Compose
+
+```bash
+# Clone the repository
+git clone https://github.com/NouraizVirk/faculty-management-system.git
+cd faculty-management-system
+
+# Configure environment
+cp backend/.env.example backend/.env
+
+# Start the full stack
+docker compose up -d --build
+
+# Access the app
+# → Frontend: http://localhost
+# → Backend API: http://localhost:5000
+# → Database: localhost:5432
+
+# Stop everything
+docker compose down -v
+```
+
+### Kubernetes Deployment
+
+```bash
+# Apply manifests
+kubectl apply -f k8s/deployment.yml
+
+# Check pod status
+kubectl get pods
+kubectl get services
+```
+
+### Ansible Server Provisioning
+
+```bash
+# Provision a fresh Ubuntu server and deploy
+ansible-playbook -i inventory.ini ansible/deploy.yml --become
+```
+
+---
+
+## 🔌 API Reference
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | ❌ | Register a new user |
+| `POST` | `/api/auth/login` | ❌ | Login and get JWT token |
+| `GET` | `/api/faculty` | ✅ JWT | Get all faculty members |
+| `GET` | `/api/faculty/:id` | ✅ JWT | Get a single faculty member |
+| `POST` | `/api/faculty` | ✅ JWT | Add a new faculty member |
+| `PUT` | `/api/faculty/:id` | ✅ JWT | Update a faculty member |
+| `DELETE` | `/api/faculty/:id` | ✅ JWT | Remove a faculty member |
+| `GET` | `/api/stats` | ✅ JWT | Get dashboard statistics |
+
+---
+
+## 🛠️ Tech Stack
+
+**Backend:** Node.js 18, Express.js, PostgreSQL 15, JWT, bcryptjs  
+**Frontend:** React 18, React Router, Nginx  
+**DevOps:** Docker, Docker Compose, Kubernetes, Ansible, GitHub Actions
+
+---
+
 ## 📄 License
-This project is licensed under the MIT License.
+
+MIT License — feel free to use and adapt.
