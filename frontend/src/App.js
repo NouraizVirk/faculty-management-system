@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 
 function App() {
-  const [stats, setStats] = useState({ totalFaculty: 12, totalDepartments: 4 });
-  const [faculty, setFaculty] = useState([
+  const [stats] = useState({ totalFaculty: 12, totalDepartments: 4 });
+  const [faculty] = useState([
     { id: 1, name: 'Dr. Sarah Connor', department: 'Computer Science', email: 's.connor@university.edu', phone: '+1 555-0192' },
     { id: 2, name: 'Prof. Alan Turing', department: 'Mathematics', email: 'a.turing@university.edu', phone: '+1 555-0193' },
     { id: 3, name: 'Dr. Grace Hopper', department: 'Software Engineering', email: 'g.hopper@university.edu', phone: '+1 555-0194' }
